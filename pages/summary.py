@@ -1711,7 +1711,7 @@ if uploaded_file:
                     if str(row.get("Daily Cases", "")).strip() == "AB":
                         continue
                     val = get_val(international_cases, name)
-                    new_ic = val if (val not in ("NA", 0)) else "NA"
+                    new_ic = str(val) if (val not in ("NA", 0)) else "NA"
                     day_df.at[idx, "International Cases"] = new_ic
 
                     # ── Add International Cases to Total Case ──────────────
