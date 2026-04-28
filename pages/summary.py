@@ -1712,7 +1712,7 @@ if uploaded_file:
                         continue
                     val = get_val(international_cases, name)
                     new_ic = val if (val not in ("NA", 0)) else "NA"
-                    day_df.at[idx, "International Cases"] = new_ic
+                    day_df.at[idx, "International Cases"] = str(new_ic)
 
                     # ── Add International Cases to Total Case ──────────────
                     if new_ic not in ("NA", "AB"):
