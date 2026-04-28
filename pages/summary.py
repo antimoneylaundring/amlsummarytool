@@ -1712,15 +1712,15 @@ if uploaded_file:
                         continue
                     val = get_val(international_cases, name)
                     new_ic = val if (val not in ("NA", 0)) else "NA"
-                    day_df.at[idx, "International Cases"] = str(new_ic)
+                    day_df.at[idx, "International Cases"] = new_ic
 
                     # ── Add International Cases to Total Case ──────────────
                     if new_ic not in ("NA", "AB"):
                         old_tc = day_df.at[idx, "Total Case"]
                         if str(old_tc) not in ("NA", "AB"):
-                            day_df.at[idx, "Total Case"] = int(float(str(old_tc))) + int(new_ic)
+                            day_df.at[idx, "Total Case"] = str(int(float(str(old_tc))) + int(new_ic))
                         else:
-                            day_df.at[idx, "Total Case"] = int(new_ic)
+                            day_df.at[idx, "Total Case"] = str(int(new_ic))
 
                 # Recompute Total row for International Cases and Total Case
                 non_total = day_df[day_df["Name"] != "Total"]
@@ -1733,8 +1733,8 @@ if uploaded_file:
                 total_tc = int(tc_vals.sum()) if tc_vals.notna().any() else "NA"
 
                 if len(total_idx) > 0:
-                    day_df.at[total_idx[0], "International Cases"] = total_ic
-                    day_df.at[total_idx[0], "Total Case"]          = total_tc
+                    day_df.at[total_idx[0], "International Cases"] = str(total_ic)
+                    day_df.at[total_idx[0], "Total Case"]          = str(total_tc)
 
                 # ── Sync back so Excel export uses updated values ──────────
                 daily_summary_all[selected_date] = day_df.copy()
