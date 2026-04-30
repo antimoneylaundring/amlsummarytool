@@ -1921,7 +1921,7 @@ if uploaded_file:
             table1 += "</tbody></table>"
 
             # ===== TABLE 2 — NO COMPARISON =====
-            table2 = "<br><br>" + build_header("table-daily2")
+            table2 = build_header("table-daily2")
             total_row2 = None
             ws_total2 = cr_total2 = rc_total2 = uf_total2 = 0
 
