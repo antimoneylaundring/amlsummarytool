@@ -936,13 +936,40 @@ if uploaded_file:
             ]
             approved.loc[multiple.index, "_used"] = True
 
-            # DAILY CASES
-            daily_cases = approved[
+            # DAILY CASES - First get all Web + UPI/Bank cases
+            all_daily_candidates = approved[
                 (~approved["_used"]) &
                 (approved[search_col] == "Web") &
                 (approved[wallet_col].isin(["UPI", "Bank Account"]))
             ]
+
+            # Find URLs that appear more than 2 times - these go to Multiple Cases
+            if not all_daily_candidates.empty:
+                url_counts = all_daily_candidates[website_col].astype(str).str.strip()
+                url_counts = url_counts[url_counts != ""]
+                url_counts = url_counts[url_counts.str.lower().isin(["nan", "none", "-"]) == False]
+                url_value_counts = url_counts.value_counts()
+                # URLs appearing more than 2 times go to Multiple
+                multiple_urls = url_value_counts[url_value_counts > 10].index
+
+                # Separate into daily_cases (≤2 occurrences) and multiple (>2 occurrences)
+                daily_cases = all_daily_candidates[
+                    ~all_daily_candidates[website_col].astype(str).str.strip().isin(multiple_urls)
+                ]
+                # Additional multiple from daily candidates (URLs > 2 times)
+                additional_multiple = all_daily_candidates[
+                    all_daily_candidates[website_col].astype(str).str.strip().isin(multiple_urls)
+                ]
+            else:
+                daily_cases = all_daily_candidates
+                additional_multiple = approved[0:0]  # Empty DataFrame
+
             approved.loc[daily_cases.index, "_used"] = True
+
+            # Add additional_multiple to multiple cases
+            if not additional_multiple.empty:
+                multiple = pd.concat([multiple, additional_multiple])
+                approved.loc[additional_multiple.index, "_used"] = True
 
             # APP
             app_cases = approved[
