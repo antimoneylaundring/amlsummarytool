@@ -1088,6 +1088,10 @@ if uploaded_file:
             # MARK AB — if all data columns are NA, mark ALL columns as "AB"
             data_cols_ab = [c for c in day_df.columns if c != "Name"]
             ab_mask = day_df.apply(lambda row: all(str(row[c]) == "NA" for c in data_cols_ab), axis=1)
+            # day_df.loc[ab_mask, data_cols_ab] = "AB"
+            for col in data_cols_ab:
+                if day_df[col].dtype != object:
+                    day_df[col] = day_df[col].astype(object)
             day_df.loc[ab_mask, data_cols_ab] = "AB"
 
             # TOTAL ROW
