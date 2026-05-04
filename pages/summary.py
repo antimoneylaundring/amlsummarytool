@@ -331,10 +331,10 @@ def build_excel(summary_df, multiple_summary_df, freelancer_summary_df,
         # Insertion — Daily Cases to Error = 9 columns (col 2 to 10)
         set_header(ws4, 3, 2, "Insertion", colspan=9, fill=header_fill)
 
-        # Quality Check — Non Video QC to Total QC = 3 columns (col 11 to 13)
-        set_header(ws4, 3, 11, "Quality Check", colspan=3, fill=subheader_fill)
+        # Quality Check — Total QC = 1 column (col 11)
+        set_header(ws4, 3, 11, "Quality Check", colspan=1, fill=subheader_fill)
 
-        current_col = 14
+        current_col = 12
         if extra_cols:
             # Website Monitoring — Website Searching, Remarks Checking, Credentials = 3 cols
             set_header(ws4, 3, current_col, "Website Monitoring", colspan=3, fill=subheader_fill)
@@ -347,7 +347,7 @@ def build_excel(summary_df, multiple_summary_df, freelancer_summary_df,
         col_labels = [
             "Daily Cases", "Multiple Cases", "Not Found", "App",
             "WA/TG Case", "Crypto Cases", "International Cases", "Total Case", "Error",
-            "Non Video QC", "Video QC", "Total QC"
+            "Total QC"
         ]
         for ci, label in enumerate(col_labels, start=2):
             set_header(ws4, 4, ci, label, fill=subheader_fill)
@@ -925,6 +925,7 @@ if uploaded_file:
             all_url_counts = all_url_counts[all_url_counts != ""]
             all_url_counts = all_url_counts[all_url_counts.str.lower().isin(["nan", "none", "-"]) == False]
             url_counts = all_url_counts.value_counts()
+            print(url_counts)
             dup_urls = url_counts[url_counts > 100].index
 
             multiple = approved[
@@ -1052,14 +1053,8 @@ if uploaded_file:
             video_qc = video_qc.reindex(total_qc.index, fill_value=0)
 
             qc_data = pd.DataFrame({
-                "Non Video QC": total_qc - video_qc,
-                "Video QC": video_qc,
                 "Total QC": total_qc
             }).fillna(0).astype(int)
-
-            qc_data["Video QC"] = qc_data["Video QC"].apply(
-                lambda x: "NA" if x == 0 else x
-            )
 
             # qc_data["Home QC"] = "NA"
             qc_data.reset_index(inplace=True)
@@ -1068,7 +1063,7 @@ if uploaded_file:
             day_df = daily_base.merge(qc_data, on="Name", how="left")
 
             # For non-Emp users, set QC columns to NA
-            qc_cols = ["Non Video QC", "Video QC", "Total QC"]
+            qc_cols = ["Total QC"]
             for col in qc_cols:
                 if col in day_df.columns:
                     day_df[col] = day_df.apply(
@@ -1163,7 +1158,7 @@ if uploaded_file:
                 duplicate_urls = (
                     upi_df[upi_df["Inserted_date"] == date]
                     .groupby(["Input_user", "Website_url"])["Website_url"]
-                    .transform("count") > 2
+                    .transform("count") > 100
                 )
 
                 user_mask = (
@@ -1636,8 +1631,6 @@ if uploaded_file:
                 "Messaging Channel Platform": "WA/TG Case",
                 "Crypto cases":                "Crypto Cases",
                 "Errors":                     "Error",
-                "Non video qc":               "Non Video QC",
-                "video qc":                   "Video QC",
             }
 
             mismatches = {}
@@ -1770,7 +1763,7 @@ if uploaded_file:
                 # ── Sync back so Excel export uses updated values ──────────
                 daily_summary_all[selected_date] = day_df.copy()
 
-            base_colspan  = 14
+            base_colspan  = 11
             extra_colspan = 5 if uploaded_file_2 is not None else 0
             total_colspan = base_colspan + extra_colspan
 
@@ -1792,7 +1785,7 @@ if uploaded_file:
 
             columns_order = ["Name", "Daily Cases", "Multiple Cases", "Not Found", "App",
                             "WA/TG Case", "Crypto Cases", "International Cases", "Total Case", "Error",
-                            "Non Video QC", "Video QC", "Total QC"]
+                            "Total QC"]
             columns_order = [c for c in columns_order if c in day_df.columns]
 
             shared_css = """
@@ -1829,7 +1822,7 @@ if uploaded_file:
                     <tr>
                         <th rowspan="2" style="background:#d9e1f2; font-weight:700; width:10%;">Name</th>
                         <th colspan="9" style="background:#d9e1f2; font-weight:700;">Insertion</th>
-                        <th colspan="3" style="background:#dce6f1; font-weight:700;">Quality Check</th>
+                        <th colspan="1" style="background:#dce6f1; font-weight:700;">Quality Check</th>
                         {extra_section_headers}
                     </tr>
                     <tr>
@@ -1842,8 +1835,6 @@ if uploaded_file:
                         <th style="background:#d9e1f2;">International<br>Cases</th>
                         <th style="background:#d9e1f2;">Total<br>Case</th>
                         <th style="background:#d9e1f2;">Error</th>
-                        <th style="background:#dce6f2;">Non<br>Video</th>
-                        <th style="background:#dce6f2;">Video<br>QC</th>
                         <th style="background:#dce6f2;">Total QC</th>
                         {extra_col_headers}
                     </tr>
