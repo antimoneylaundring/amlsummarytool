@@ -849,7 +849,7 @@ if uploaded_file:
     daily_users = [
         "Emp Muskan Verma", "Emp Shashank Sharma",
         "Emp Vidhi Satsangi", "INT Bhavna Mathur",
-        "INT Chandrakanta Vishwakarma", "INT Gunjan Baghel", "INT Neha Baghel"
+        "INT Chandrakanta Vishwakarma", "INT Gunjan Baghel", "INT Neha Baghel","INT Nidhi Thakur", "INT Sharad Goswami", "INT Shalini Singh", "INT Pragati Singh"
     ]
     multi_users = {"Emp Vidhi Satsangi", "Emp Shashank Sharma", "Emp Muskan Verma"}
 
@@ -1901,7 +1901,7 @@ if uploaded_file:
                 table1 += "</tr>"
 
             if total_row1 is not None:
-                table1 += "<tr style='background:#e2efda;'>"
+                table1 += "<tr style='background:#b8cce4;'>"
                 for col in columns_order:
                     val = total_row1[col] if col in total_row1 else ""
                     align = ' style="text-align:left"' if col == "Name" else ''
@@ -1966,7 +1966,7 @@ if uploaded_file:
                 table2 += "</tr>"
 
             if total_row2 is not None:
-                table2 += "<tr style='background:#e2efda;'>"
+                table2 += "<tr style='background:#b8cce4;'>"
                 for col in columns_order:
                     val = total_row2[col] if col in total_row2 else ""
                     align = ' style="text-align:left"' if col == "Name" else ''
