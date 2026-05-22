@@ -1080,15 +1080,6 @@ if uploaded_file:
                     lambda x: int(float(x)) if x != "NA" and str(x).replace(".", "", 1).isdigit() else x
                 )
 
-            # MARK AB — if all data columns are NA, mark ALL columns as "AB"
-            data_cols_ab = [c for c in day_df.columns if c != "Name"]
-            ab_mask = day_df.apply(lambda row: all(str(row[c]) == "NA" for c in data_cols_ab), axis=1)
-            # day_df.loc[ab_mask, data_cols_ab] = "AB"
-            for col in data_cols_ab:
-                if day_df[col].dtype != object:
-                    day_df[col] = day_df[col].astype(object)
-            day_df.loc[ab_mask, data_cols_ab] = "AB"
-
             # TOTAL ROW
             total_row = {}
             for col in day_df.columns:
@@ -1678,7 +1669,10 @@ if uploaded_file:
 
                     exclude_highlight_users = ["Emp Shubhankar Shukla", "Emp Sheetal Dubey"]
 
-                    for _, row in day_df.iterrows():
+                    def row_is_all_na(row, cols):
+                        return all(str(row[c]).strip() in ("NA", "") for c in cols)
+
+                    for idx, row in day_df.iterrows():
                         name = str(row["Name"]).strip()
                         if name == "Total" or name in exclude_highlight_users:
                             continue
@@ -1695,14 +1689,60 @@ if uploaded_file:
                         if match.empty:
                             continue
 
+                        num_cols = ["Daily Cases", "Multiple Cases", "Not Found", "App", "WA/TG Case", "Crypto Cases", "Error"]
+                        if row_is_all_na(row, [c for c in num_cols if c in day_df.columns]):
+                            for col2, col1 in col_mapping.items():
+                                if col1 not in day_df.columns:
+                                    continue
+                                val2 = match.iloc[0][col2]
+                                if pd.isna(val2):
+                                    continue
+                                s2 = str(val2).strip()
+                                if s2.lower() in ("", "na", "nan", "none"):
+                                    continue
+                                if s2.replace('.', '', 1).isdigit():
+                                    day_df.at[idx, col1] = int(float(s2))
+                                else:
+                                    day_df.at[idx, col1] = s2
+
+                            # Recalculate Total Case for this row after filling second-file values
+                            total_val = 0
+                            for col in ["Daily Cases", "Multiple Cases", "Not Found", "App", "WA/TG Case", "Crypto Cases"]:
+                                if col in day_df.columns:
+                                    v = day_df.at[idx, col]
+                                    if str(v).replace('.', '', 1).isdigit():
+                                        total_val += int(float(str(v)))
+                            day_df.at[idx, "Total Case"] = total_val if total_val != 0 else "NA"
+
+                        def normalize_compare_value(value):
+                            if pd.isna(value):
+                                return 0
+                            if isinstance(value, str):
+                                s = value.strip()
+                                if s.lower() in ("", "na", "nan", "none"):
+                                    return 0
+                                if s == "AB":
+                                    return 0
+                                if s.replace('.', '', 1).isdigit():
+                                    return int(float(s))
+                                return s
+                            try:
+                                return int(float(value))
+                            except Exception:
+                                return value
+
                         for col2, col1 in col_mapping.items():
                             if col1 not in day_df.columns:
                                 continue
                             val1 = row[col1]
                             val2 = match.iloc[0][col2]
-                            v1 = 0 if val1 == "NA" else int(float(str(val1))) if str(val1).replace(".", "", 1).isdigit() else val1
-                            v2 = 0 if pd.isna(val2) else int(float(str(val2)))
-                            if v1 != v2:
+                            v1 = normalize_compare_value(val1)
+                            v2 = normalize_compare_value(val2)
+
+                            if isinstance(v1, (int, float)) and isinstance(v2, (int, float)):
+                                if int(v1) != int(v2):
+                                    mismatches[(name, col1)] = int(v2)
+                            elif v1 != v2:
                                 mismatches[(name, col1)] = v2
 
                 except Exception as e:
@@ -1725,14 +1765,20 @@ if uploaded_file:
                         return d[key]
                 return "NA"
 
+            def has_second_sheet_presence(name):
+                if not name or name == "Total":
+                    return False
+                for d in [website_searching, credential_making, remark_checking, upi_fraud, international_cases, remark_col]:
+                    val = get_val(d, name)
+                    if val != "NA":
+                        return True
+                return False
+
             # ── Merge International Cases from file 2 into day_df ──────────
-            if uploaded_file_2 is not None and international_cases:
+            if uploaded_file_2 is not None:
                 for idx, row in day_df.iterrows():
                     name = str(row["Name"]).strip()
                     if name == "Total":
-                        continue
-                    # Preserve AB marking — don't overwrite AB rows
-                    if str(row.get("Daily Cases", "")).strip() == "AB":
                         continue
                     val = get_val(international_cases, name)
                     new_ic = str(val) if (val not in ("NA", 0)) else "NA"
@@ -1759,6 +1805,24 @@ if uploaded_file:
                 if len(total_idx) > 0:
                     day_df.at[total_idx[0], "International Cases"] = str(total_ic)
                     day_df.at[total_idx[0], "Total Case"]          = str(total_tc)
+
+                # ── Recompute AB rows after second sheet data is applied ──────────
+                data_cols_ab = [c for c in day_df.columns if c != "Name"]
+                for idx, row in day_df.iterrows():
+                    if str(row["Name"]).strip() == "Total":
+                        continue
+                    name = str(row["Name"]).strip()
+                    if has_second_sheet_presence(name):
+                        for col in data_cols_ab:
+                            if str(day_df.at[idx, col]).strip() == "AB":
+                                day_df.at[idx, col] = "NA"
+                        continue
+                    if all(str(row[col]).strip() in ("NA", "") for col in data_cols_ab):
+                        for col in data_cols_ab:
+                            day_df.at[idx, col] = "AB"
+                    elif str(row.get("Daily Cases", "")).strip() == "AB":
+                        for col in data_cols_ab:
+                            day_df.at[idx, col] = "AB"
 
                 # ── Sync back so Excel export uses updated values ──────────
                 daily_summary_all[selected_date] = day_df.copy()
@@ -1861,7 +1925,10 @@ if uploaded_file:
                     val = row[col] if col in row else "NA"
                     is_mismatch = (name, col) in mismatches
 
-                    if is_mismatch:
+                    if is_ab and col != "Name":
+                        css = ' class="ab-cell"'
+                        display_val = "AB"
+                    elif is_mismatch:
                         css = ' class="mismatch"'
                         display_val = mismatches[(name, col)]
                     elif str(val) == "AB":
