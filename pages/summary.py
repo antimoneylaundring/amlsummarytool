@@ -999,8 +999,11 @@ if uploaded_file:
             daily_base["Not Found"]      = daily_base["Name"].map(not_found_counts).fillna("NA")
             daily_base["App"]            = daily_base["Name"].map(m(app_cases)).fillna("NA")
             daily_base["WA/TG Case"]     = daily_base["Name"].map(m(watg)).fillna("NA")
-            daily_base["Crypto Cases"]        = daily_base["Name"].map(m(crypto)).fillna("NA")
+            daily_base["Crypto Cases"]   = daily_base["Name"].map(m(crypto)).fillna("NA")
             daily_base["International Cases"] = "NA"  # populated from file 2
+
+            # daily_base["Daily Cases"] = daily_base["Daily Cases"].replace(0, "NA")
+            # daily_base["Multiple Cases"] = daily_base["Multiple Cases"].replace(0, "NA")
 
             num_cols_d = ["Daily Cases", "Multiple Cases", "Not Found", "App", "WA/TG Case", "Crypto Cases"]
 
@@ -1091,6 +1094,7 @@ if uploaded_file:
                     total_row[col] = int(numeric_vals.sum()) if numeric_vals.notna().any() else "NA"
 
             day_df = pd.concat([day_df, pd.DataFrame([total_row])], ignore_index=True)
+            day_df["Total Case"] = day_df["Total Case"].astype(object)
             daily_summary_all[date] = day_df
 
         df.drop(columns=["_date"], inplace=True, errors="ignore")
@@ -1823,6 +1827,23 @@ if uploaded_file:
                     elif str(row.get("Daily Cases", "")).strip() == "AB":
                         for col in data_cols_ab:
                             day_df.at[idx, col] = "AB"
+
+                if "Daily Cases" in day_df.columns:
+                    day_df["Daily Cases"] = day_df["Daily Cases"].replace(0, "NA")
+                if "Multiple Cases" in day_df.columns:
+                    day_df["Multiple Cases"] = day_df["Multiple Cases"].replace(0, "NA")
+                if "Not Found" in day_df.columns:
+                    day_df["Not Found"] = day_df["Not Found"].replace(0, "NA")
+                if "App" in day_df.columns:
+                    day_df["App"] = day_df["App"].replace(0, "NA")
+                if "WA/TG Case" in day_df.columns:
+                    day_df["WA/TG Case"] = day_df["WA/TG Case"].replace(0, "NA")
+                if "Crypto Cases" in day_df.columns:
+                    day_df["Crypto Cases"] = day_df["Crypto Cases"].replace(0, "NA")
+                if "International Cases" in day_df.columns:
+                    day_df["International Cases"] = day_df["International Cases"].replace(0, "NA")
+                if "Error" in day_df.columns:
+                    day_df["Error"] = day_df["Error"].replace(0, "NA")
 
                 # ── Sync back so Excel export uses updated values ──────────
                 daily_summary_all[selected_date] = day_df.copy()
