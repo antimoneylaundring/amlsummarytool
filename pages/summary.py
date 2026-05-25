@@ -1788,7 +1788,7 @@ if uploaded_file:
                     if new_ic not in ("NA", "AB"):
                         old_tc = day_df.at[idx, "Total Case"]
                         if str(old_tc) not in ("NA", "AB"):
-                            day_df.at[idx, "Total Case"] = str(int(float(str(old_tc))) + int(new_ic))
+                            day_df.at[idx, "Total Case"] = int(float(str(old_tc))) + int(new_ic)
                         else:
                             day_df.at[idx, "Total Case"] = str(int(new_ic))
 
