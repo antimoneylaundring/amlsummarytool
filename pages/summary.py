@@ -1153,7 +1153,7 @@ if uploaded_file:
                 duplicate_urls = (
                     upi_df[upi_df["Inserted_date"] == date]
                     .groupby(["Input_user", "Website_url"])["Website_url"]
-                    .transform("count") > 100
+                    .transform("count") > 50
                 )
 
                 user_mask = (
